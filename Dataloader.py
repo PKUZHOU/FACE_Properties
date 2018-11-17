@@ -4,6 +4,7 @@ import os
 import random
 import cv2
 import numpy as np
+from torch.utils.data import DataLoader
 
 def transform(img):
     if random.random<0.5:
@@ -57,14 +58,6 @@ class PoseDateset(data.Dataset):
                 filename = self.train_neg[index]
                 label = 0
         if not self.train:
-            # if (index % 2 == 0):
-            #     index = index / 2
-            #     filename = self.test_pos[index]
-            #     label = 1
-            # elif (index % 2 == 1):
-            #     index = (index - 1) / 2
-            #     filename = self.test_neg[index]
-            #     label = 0
             filename = self.test_neg[index]
             label = 0
         img = cv2.imread(filename)
@@ -83,7 +76,7 @@ class PoseDateset(data.Dataset):
 
 
 class Multilable_Dateset(data.Dataset):
-    def __init__(self,root = 'Mdata.txt',train = True,transform = None):
+    def __init__(self,root = 'KMdata.txt',train = True,transform = None):
         self.root = root
         self.data = {}
         self.transform = transform
@@ -101,17 +94,19 @@ class Multilable_Dateset(data.Dataset):
             for line in annos:
                 line = line.strip().split(' ')
                 file_path = line[0]
-                nokouzhao,kouzhao= float(line[1]),float(line[2])
-#                nokouzhao,kouzhao,nomojing,mojing = float(line[1]),float(line[2]),float(line[3]),float(line[4])
-                self.data[file_path] = [nokouzhao,kouzhao]
+                # nokouzhao,kouzhao= float(line[1]),float(line[2])
+                nokouzhao,kouzhao,nomojing,mojing = float(line[1]),float(line[2]),float(line[3]),float(line[4])
+                self.data[file_path] = [mojing,kouzhao]
         num = 0
         for key in self.data.keys():
             try:
                 label = self.data[key]
+                # img = cv2.imread('/home/zhou/Pictures/timg.jpeg')
                 img = cv2.imread(key)
+
                 if self.transform != None:
                     img = self.transform(img)                 
-                label = torch.Tensor(label)
+                label = torch.Tensor(label).long()
                 self.lables.append(label)
                 self.imgs.append(img)
                 num+=1
@@ -122,19 +117,8 @@ class Multilable_Dateset(data.Dataset):
                 pass
 
     def __getitem__(self, index):
-        # if self.train:
-        # filename = self.data.keys()[index]
-        # label = self.data[filename]
         label = self.lables[index]
-        #label[0]/=45.
-        #label[1]/=45.
-        #label[2]/=45.
         img = self.imgs[index]
-        # if self.transform!=None:
-        #     img = self.transform(img)
-        # else:
-        #     img = torch.Tensor(img)
-        # label = torch.Tensor(label)
         return img,label
 
     def __len__(self):
@@ -144,5 +128,7 @@ class Multilable_Dateset(data.Dataset):
 
 if __name__ == '__main__':
     Data = Multilable_Dateset(transform=transform)
-    img,label = Data[0]
-    print(label.data)
+    trainloader = DataLoader(Data,batch_size=32,shuffle=True,num_workers=8)
+    for index,data in enumerate(trainloader):
+        print(data[1])
+        break

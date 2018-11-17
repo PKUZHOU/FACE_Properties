@@ -3,7 +3,7 @@
 import torch
 from torch.utils.data import DataLoader
 from Dataloader import Multilable_Dateset,transform
-from network import PoseNet,PoseLoss
+from network import Property_Net,PropertyLoss
 
 batch = 256
 epoch = 30
@@ -19,20 +19,21 @@ def adjust_learning_rate(optimizer,decay_rate = 0.1): #学习率每次乘0.1
 
 def train():
 
-    net = PoseNet(2) #out put is 3 dimentions
+    net = Property_Net() #out put is 3 dimentions
     net.train(True)
     net.cuda() #使用显卡训练
-    opt = torch.optim.SGD(net.parameters(),lr = 0.001,momentum=0.9,weight_decay=5e-4) #SGD 参数
-    criterion = PoseLoss()
+    opt = torch.optim.SGD(net.parameters(),lr = 0.01,momentum=0.9,weight_decay=5e-4) #SGD 参数
+    criterion = PropertyLoss()
 
     for epc in range(epoch):
         avgloss = torch.Tensor([0.])
         batchs = 0
-        if epc in [3,10,15,20]: # 学习率降低的epc
+        if epc in [5,10,15,20]: # 学习率降低的epc
             adjust_learning_rate(opt)
         torch.save(net.state_dict(),'M_models/model_'+str(epc)+'.pkl') #保存模型
         for index,data in enumerate(trainloader):
             image,label = data
+            # print label.shape
             image = image.cuda()
             label = label.cuda()
             output = net(image)
